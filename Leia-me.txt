@@ -1,0 +1,4 @@
+Coloque os arquivos do layout 16 na pasta spedlayout16
+Rode o programa spedlayout17
+Verifique na pasta spedlayout17 os arquivos ajustados
+Na pasta processados ficarão os arquivos originais com layout 16 que o programa já processou

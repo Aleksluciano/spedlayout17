@@ -93,6 +93,8 @@ func ChangeContent(file *os.File) ([]string, error) {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 	lines := []string{}
+	c100_total := 0
+	d100_total := 0
 	//read the file line by line
 
 	//make the code below get the index for the for statement
@@ -100,6 +102,7 @@ func ChangeContent(file *os.File) ([]string, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		indexFile++
+
 		//rules to change the file
 
 		isVersion16 := CheckVersion16(indexFile, line)
@@ -108,16 +111,206 @@ func ChangeContent(file *os.File) ([]string, error) {
 		}
 
 		line = changeLayoutTo17(indexFile, line)
+
+		skip, c100, d100 := checkValuesToSkip(line)
+		if skip == true {
+			c100_total += c100
+			d100_total += d100
+			continue
+		}
+        line = changeRegC990(c100_total, line)
+		line = changeRegD990(d100_total, line)
+		line = changeReg9900_C100(c100_total, line)
+		line = changeReg9900_D100(d100_total, line)
 		line = changeRegK990(line)
 		line = changeReg9900_9900(line)
 		line = changeReg9990(line)
-		line = changeReg9999(line)
+		line = changeReg9999(c100_total + d100_total,line)
 		lines = append(lines, line)
 		lines = addRegK010_1(lines, line)
 		lines = addReg9900_K010_1(lines, line)
 
 	}
 	return lines, nil
+}
+
+func changeReg9900_D100(total int, line string) string {
+	if strings.Contains(line, "|9900|D100|") {
+		parts := strings.Split(line, "|")
+		if len(parts) > 1 && parts[1] == "9900" && parts[2] == "D100" {
+			value, err := strconv.Atoi(parts[3])
+			if err != nil {
+				fmt.Println(err)
+				return line
+			}
+			value -= total
+			parts[3] = strconv.Itoa(value)
+			newLine := strings.Join(parts, "|")
+			return newLine
+		}
+	}
+	return line
+}
+
+func changeReg9900_C100(total int, line string) string {
+	if strings.Contains(line, "|9900|C100|") {
+		parts := strings.Split(line, "|")
+		if len(parts) > 1 && parts[1] == "9900" && parts[2] == "C100" {
+			value, err := strconv.Atoi(parts[3])
+			if err != nil {
+				fmt.Println(err)
+				return line
+			}
+			value -= total
+			parts[3] = strconv.Itoa(value)
+			newLine := strings.Join(parts, "|")
+			return newLine
+		}
+	}
+	return line
+}
+
+func changeRegD990(total int, line string) string {
+	if strings.Contains(line, "|D990|") {
+		parts := strings.Split(line, "|")
+		if len(parts) > 1 && parts[1] == "D990"	{
+			value, err := strconv.Atoi(parts[2])
+			if err != nil {
+				fmt.Println(err)
+				return line
+			}
+			value -= total
+			parts[2] = strconv.Itoa(value)
+			newLine := strings.Join(parts, "|")
+			return newLine
+		}
+	}
+	return line
+}
+
+func changeRegC990(total int, line string) string {
+	if strings.Contains(line, "|C990|") {
+		parts := strings.Split(line, "|")
+		if len(parts) > 1 && parts[1] == "C990"	{
+			value, err := strconv.Atoi(parts[2])
+			if err != nil {
+				fmt.Println(err)
+				return line
+			}
+			value -= total
+			parts[2] = strconv.Itoa(value)
+			newLine := strings.Join(parts, "|")
+			return newLine
+		}
+	}
+	return line
+}
+
+func checkValuesToSkip(line string) (bool, int, int) {
+	if strings.Contains(line, "|C100|0|0||55|05|") {
+		parts := strings.Split(line, "|")
+		if len(parts) > 6 &&
+			parts[1] == "C100" &&
+			parts[2] == "0" &&
+			parts[3] == "0" &&
+			parts[4] == "" &&
+			parts[5] == "55" &&
+			parts[6] == "05" {
+			return true, 1,0
+		}
+	}
+	if strings.Contains(line, "|C100|1|0||55|05|") {
+       		parts := strings.Split(line, "|")
+		if len(parts) > 6 &&
+			parts[1] == "C100" &&
+			parts[2] == "1" &&
+			parts[3] == "0" &&
+			parts[4] == "" &&
+			parts[5] == "55" &&
+			parts[6] == "05" {
+			return true, 1,0
+		}
+	}
+	if strings.Contains(line, "|C100|0|0||55|04|") {
+		parts := strings.Split(line, "|")
+		if len(parts) > 6 &&
+			parts[1] == "C100" &&
+			parts[2] == "0" &&
+			parts[3] == "0" &&
+			parts[4] == "" &&
+			parts[5] == "55" &&
+			parts[6] == "04" {
+			return 	true, 1,0
+		}
+
+	}
+	if strings.Contains(line, "|C100|1|0||55|04|") {
+		parts := strings.Split(line, "|")
+		if len(parts) > 6 &&
+			parts[1] == "C100" &&
+			parts[2] == "1" &&
+			parts[3] == "0" &&
+			parts[4] == "" &&
+			parts[5] == "55" &&
+			parts[6] == "04" {
+			return true, 1,0
+		}
+	}
+
+	if strings.Contains(line, "|D100|0|0||57|05|") {
+		parts := strings.Split(line, "|")
+		if len(parts) > 6 &&
+			parts[1] == "D100" &&
+			parts[2] == "0" &&
+			parts[3] == "0" &&
+			parts[4] == "" &&
+			parts[5] == "57" &&
+			parts[6] == "05" {
+			return true, 0,1
+		}
+	}
+if strings.Contains(line, "|D100|1|0||57|05|") {
+		parts := strings.Split(line, "|")
+		if len(parts) > 6 &&
+			parts[1] == "D100" &&
+			parts[2] == "1" &&
+			parts[3] == "0" &&
+			parts[4] == "" &&
+			parts[5] == "57" &&
+			parts[6] == "05" {
+			return true, 0,1
+		}
+}
+
+	if strings.Contains(line, "|D100|0|0||57|04|") {
+		parts := strings.Split(line, "|")
+		if len(parts) > 6 &&
+			parts[1] == "D100" &&
+			parts[2] == "0" &&
+			parts[3] == "0" &&
+			parts[4] == "" &&
+			parts[5] == "57" &&
+			parts[6] == "04" {
+			return true, 0,1
+		}
+	}
+
+	if strings.Contains(line, "|D100|1|0||57|04|") {
+		parts := strings.Split(line, "|")
+		if len(parts) > 6 &&
+			parts[1] == "D100" &&
+			parts[2] == "1" &&
+			parts[3] == "0" &&
+			parts[4] == "" &&
+			parts[5] == "57" &&
+			parts[6] == "04" {
+			return true, 0,1
+		}
+	}
+
+
+
+	return false, 0,0
 }
 
 func CheckVersion16(indexFile int, line string) bool {
@@ -222,7 +415,7 @@ func changeRegK990(line string) string {
 	return line
 }
 
-func changeReg9999(line string) string {
+func changeReg9999(total int ,line string) string {
 	if strings.Contains(line, "|9999|") {
 		parts := strings.Split(line, "|")
 		if len(parts) > 1 && parts[1] == "9999"{
@@ -231,6 +424,7 @@ func changeReg9999(line string) string {
 				fmt.Println(err)
 			}
 			value += 2
+			value -= total
 			parts[2] = strconv.Itoa(value)
 			newLine := strings.Join(parts, "|")
 			return newLine
